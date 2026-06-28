@@ -2,6 +2,7 @@
 
 use std::marker::PhantomData;
 use borsh::{BorshDeserialize, BorshSerialize};
+use serde::{Deserialize, Serialize};
 
 
 
@@ -33,6 +34,22 @@ where
         borsh::from_slice(bytes).map_err(|e| e.into())
     }
 }
+
+impl<T> Serializer<T> for Json
+where
+    T: Serialize + for<'a> Deserialize<'a>,
+{
+    type Error = serde_json::Error;
+
+    fn to_bytes(&self, data: &T) -> Result<Vec<u8>, Self::Error> {
+        serde_json::to_vec(data).map_err(|e| e.into())
+    }
+
+    fn from_bytes(&self, bytes: &[u8]) -> Result<T, Self::Error> {
+        serde_json::from_slice(bytes).map_err(|e| e.into())
+    }
+}
+
 
 
 pub struct Storage<T, S: Serializer<T>> {
@@ -80,6 +97,8 @@ impl<T, S: Serializer<T>> Storage<T, S> {
     PartialEq,
     BorshSerialize,
     BorshDeserialize,
+     Serialize,
+    Deserialize,
 
 )]
 pub struct DataStruct {
@@ -104,5 +123,16 @@ mod tests {
         assert!(storage.has_data());
         assert_eq!(storage.load().unwrap(), person);
     }
+ #[test]
+    fn test_json() {
+        let person = DataStruct {
+            data:"apaar".to_string()
+        };
 
+        let mut storage = Storage::new(Json);
+        storage.save(&person).unwrap();
+
+        assert!(storage.has_data());
+        assert_eq!(storage.load().unwrap(), person);
+    }
 }

@@ -74,3 +74,35 @@ impl<T, S: Serializer<T>> Storage<T, S> {
     }
     
     }
+
+    #[derive(
+    Debug,
+    PartialEq,
+    BorshSerialize,
+    BorshDeserialize,
+
+)]
+pub struct DataStruct {
+    pub data: String,
+  
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_borsh() {
+        let person = DataStruct {
+            data: "shirnath".to_string(),    
+        };
+
+        let mut storage = Storage::new(Borsh);
+        storage.save(&person).unwrap();
+
+        assert!(storage.has_data());
+        assert_eq!(storage.load().unwrap(), person);
+    }
+
+}
